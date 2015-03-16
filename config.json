@@ -1,0 +1,9 @@
+{
+	"11": ["pkill -f omxplayer", "omxplayer /home/pi/Movies/test.mp4"],
+	"12": "",
+	"13": ["pkill -f omxplayer", "omxplayer /home/pi/Movies/foo.mp4"],
+	"15": ["pkill -f omxplayer", "omxplayer /home/pi/Movies/bar.mp4"],
+	"16": "",
+	"18": "",
+	"22": ""
+}
