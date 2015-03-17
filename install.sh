@@ -5,6 +5,7 @@ RGC_HOME=~/rpi-gpio-control
 ################################################################
 ## Iceweasel + VLC plugin
 ################################################################
+sudo apt-get update
 sudo apt-get install iceweasel browser-plugin-vlc
 
 ################################################################
