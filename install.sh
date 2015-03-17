@@ -6,7 +6,7 @@ RGC_HOME=~/rpi-gpio-control
 ## Iceweasel + VLC plugin
 ################################################################
 sudo apt-get update
-sudo apt-get install iceweasel browser-plugin-vlc
+sudo apt-get install iceweasel browser-plugin-vlc gnash mozilla-plugin-gnash
 
 ################################################################
 ## RGC
@@ -27,7 +27,7 @@ sudo tee /usr/bin/rpi-gpio-control > /dev/null << EOF
 RGC_HOME=$RGC_HOME
 
 cd \${RGC_HOME}
-export DISPLAY=":0.0"
+#export DISPLAY=":0.0"
 python rpi-gpio-control.py config.json
 cd -
 EOF
@@ -45,8 +45,8 @@ sudo tee /etc/init.d/rpi-gpio-control > /dev/null << EOF
 # Provides: rpi-gpio-control
 # Required-Start:    \$network \$local_fs
 # Required-Stop:     \$network \$local_fs
-# Default-Start:     3 4 5
-# Default-Stop:      0 1 2 6
+# Default-Start:     4 5
+# Default-Stop:      0 1 2 3 6
 # Short-Description: rpi-gpio-control init script.
 # Description: Starts and stops rpi-gpio-control services.
 ### END INIT INFO
@@ -59,7 +59,7 @@ RGC_PID=\$(ps aux | awk '/python rpi-gpio-control/ && !/awk/ {print \$2}')
 start() {
 	echo "Starting script rpi-gpio-control"
 	if [ -z "\$RGC_PID" ]; then
-		nohup \$RUN 2>&1 > \$RGC_HOME/rpi-gpio-control.log &
+		(nohup \$RUN) > \$RGC_HOME/rpi-gpio-control.log 2>&1 &
 		echo "Started"
 	else
 		echo "rpi-gpio-control already started"
@@ -104,7 +104,6 @@ esac
 exit 0
 EOF
 sudo chmod +x /etc/init.d/rpi-gpio-control
-sudo update-rc.d rpi-gpio-control defaults
 
 ## Autostart
 mkdir -p ~/.config/autostart
@@ -114,5 +113,12 @@ tee iceweasel.desktop > /dev/null << EOF
 Type=Application
 Name=Iceweasel
 Exec=iceweasel
+StartupNotify=false
+EOF
+tee RGC.desktop > /dev/null << EOF
+[Desktop Entry]
+Type=Application
+Name=RGC
+Exec=sudo service rpi-gpio-control start
 StartupNotify=false
 EOF
