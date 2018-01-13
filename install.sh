@@ -2,11 +2,68 @@
 
 RGC_HOME=~/rpi-gpio-control
 
+init_file () {
+	if [ ! -f $1.orig ]; then
+	sudo mv $1 $1.orig
+	fi
+	cp $1.orig $1
+}
+
+################################################################
+## Update Raspbian
+################################################################
+sudo apt-get update
+sudo apt-get upgrade
+
+################################################################
+## Install Wifi AP stuff
+################################################################
+sudo apt-get install -y dnsmasq hostapd
+sudo systemctl stop dnsmasq
+sudo systemctl stop hostapd
+init_file /etc/dhcpcd.conf
+sudo tee -a /etc/dhcpcd.conf > /dev/null << EOF
+interface wlan0
+	static ip_address=192.168.4.1/24
+EOF
+sudo service dhcpcd restart
+init_file /etc/dnsmasq.conf
+sudo tee /etc/dnsmasq.conf > /dev/null << EOF
+interface=wlan0	# Use the require wireless interface - usually wlan0
+	dhcp-range=192.168.4.10,192.168.4.200,255.255.255.0,12h
+EOF
+sudo tee /etc/hostapd/hostapd.conf > /dev/null << EOF
+interface=wlan0
+driver=nl80211
+ssid=RGCAP
+hw_mode=g
+channel=7
+wmm_enabled=0
+macaddr_acl=0
+auth_algs=1
+ignore_broadcast_ssid=0
+wpa=2
+wpa_passphrase=RGCAPPWD
+wpa_key_mgmt=WPA-PSK
+wpa_pairwise=TKIP
+rsn_pairwise=CCMP
+EOF
+init_file /etc/default/hostapd
+sudo tee -a /etc/default/hostapd > /dev/null << EOF
+DAEMON_CONF="/etc/hostapd/hostapd.conf"
+EOF
+sudo service hostapd start
+sudo service dnsmasq start
+init_file /etc/sysctl.conf
+sudo sed -rie 's/#(net.ipv4.ip_forward=1)/\1/' /etc/sysctl.conf
+sudo iptables -t nat -A  POSTROUTING -o eth0 -j MASQUERADE
+sudo sh -c "iptables-save > /etc/iptables.ipv4.nat"
+sudo iptables-restore < /etc/iptables.ipv4.nat
+
 ################################################################
 ## Iceweasel + VLC plugin
 ################################################################
-sudo apt-get update
-sudo apt-get install iceweasel browser-plugin-vlc gnash mozilla-plugin-gnash
+sudo apt-get install -y iceweasel browser-plugin-vlc gnash mozilla-plugin-gnash
 
 ################################################################
 ## RGC
@@ -122,3 +179,8 @@ Name=RGC
 Exec=sudo service rpi-gpio-control start
 StartupNotify=false
 EOF
+
+################################################################
+## reboot
+################################################################
+sudo reboot
